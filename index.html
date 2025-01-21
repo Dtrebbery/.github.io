@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Мой Блог</title>
+    <style>
+        .post {
+            border: 1px solid #ccc;
+            margin: 10px;
+            padding: 10px;
+        }
+        .comment {
+            margin-left: 20px;
+            border-left: 2px solid #ccc;
+            padding-left: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="blog-container">
+        <h1>Мой Блог</h1>
+        
+        <!-- Форма поиска -->
+        <div>
+            <input type="text" id="searchInput" placeholder="Поиск...">
+            <button onclick="searchPosts()">Найти</button>
+        </div>
+
+        <!-- Форма добавления записи -->
+        <div>
+            <h2>Добавить новую запись</h2>
+            <input type="text" id="postTitle" placeholder="Заголовок">
+            <textarea id="postContent" placeholder="Содержание"></textarea>
+            <button onclick="addPost()">Добавить запись</button>
+        </div>
+
+        <!-- Список записей -->
+        <div id="posts"></div>
+    </div>
+
+    <script>
+        // Структура для хранения записей
+        let posts = JSON.parse(localStorage.getItem('posts')) || [];
+
+        // Добавление записи
+        function addPost() {
+            const title = document.getElementById('postTitle').value;
+            const content = document.getElementById('postContent').value;
+            
+            if (title && content) {
+                const post = {
+                    id: Date.now(),
+                    title: title,
+                    content: content,
+                    comments: []
+                };
+                
+                posts.push(post);
+                savePosts();
+                displayPosts();
+                
+                // Очистка полей
+                document.getElementById('postTitle').value = '';
+                document.getElementById('postContent').value = '';
+            }
+        }
+
+        // Удаление записи
+        function deletePost(id) {
+            posts = posts.filter(post => post.id !== id);
+            savePosts();
+            displayPosts();
+        }
+
+        // Редактирование записи
+        function editPost(id) {
+            const post = posts.find(p => p.id === id);
+            const newTitle = prompt('Новый заголовок:', post.title);
+            const newContent = prompt('Новое содержание:', post.content);
+            
+            if (newTitle && newContent) {
+                post.title = newTitle;
+                post.content = newContent;
+                savePosts();
+                displayPosts();
+            }
+        }
+
+        // Добавление комментария
+        function addComment(postId) {
+            const commentText = document.getElementById(`comment-${postId}`).value;
+            if (commentText) {
+                const post = posts.find(p => p.id === postId);
+                post.comments.push({
+                    id: Date.now(),
+                    text: commentText
+                });
+                savePosts();
+                displayPosts();
+            }
+        }
+
+        // Поиск записей
+        function searchPosts() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const filteredPosts = posts.filter(post => 
+                post.title.toLowerCase().includes(searchText) || 
+                post.content.toLowerCase().includes(searchText)
+            );
+            displayPosts(filteredPosts);
+        }
+
+        // Сохранение записей в localStorage
+        function savePosts() {
+            localStorage.setItem('posts', JSON.stringify(posts));
+        }
+
+        // Отображение записей
+        function displayPosts(postsToDisplay = posts) {
+            const postsContainer = document.getElementById('posts');
+            postsContainer.innerHTML = '';
+
+            postsToDisplay.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.className = 'post';
+                postElement.innerHTML = `
+                    <h3>${post.title}</h3>
+                    <p>${post.content}</p>
+                    <button onclick="editPost(${post.id})">Редактировать</button>
+                    <button onclick="deletePost(${post.id})">Удалить</button>
+                    <div>
+                        <h4>Комментарии:</h4>
+                        ${post.comments.map(comment => `
+                            <div class="comment">
+                                <p>${comment.text}</p>
+                            </div>
+                        `).join('')}
+                        <input type="text" id="comment-${post.id}" placeholder="Ваш комментарий">
+                        <button onclick="addComment(${post.id})">Добавить комментарий</button>
+                    </div>
+                `;
+                postsContainer.appendChild(postElement);
+            });
+        }
+
+        // Начальное отображение записей
+        displayPosts();
+    </script>
+</body>
+</html> 
